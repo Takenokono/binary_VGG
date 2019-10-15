@@ -73,11 +73,12 @@ def flickr_api(img_name):
     #保存フォルダの指定
     savedir = "../images"
     
+    number_img = 200
 
     flickr = FlickrAPI(key, secret, format='parsed-json') #Flickrにアクセス
     result = flickr.photos.search( #Flickrから探してくる。
         text = img_name,  
-        per_page = 200, #外れデータを考慮して多め
+        per_page = number_img, #外れデータを考慮して多め
         media = 'photos',   #mediaは写真
         sort = 'relevance', #relevanceは関連順
         safe_search = 1,  #UIコンテンツは取得しない
@@ -97,14 +98,14 @@ def flickr_api(img_name):
 
         
         
-        if i<=20:
-            filepath = savedir + '/test/' + img_name + '/' + photo['id'] + '.jpg'
+        if i<=int(number_img*0.9):
+            filepath = savedir + '/train/' + img_name + '/' + photo['id'] + '.jpg'
             if os.path.exists(filepath): continue #重複確認
             urlretrieve(url_q,filepath) #url_qのURLの先を、filepathに保存
             
             
         else:
-            filepath = savedir + '/train/' + img_name + '/' + photo['id'] + '.jpg' 
+            filepath = savedir + '/test/' + img_name + '/' + photo['id'] + '.jpg' 
             if os.path.exists(filepath): continue #重複確認
             urlretrieve(url_q,filepath)
             
