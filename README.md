@@ -7,4 +7,4 @@
 `localhot:80/check`
 
 ## Front Page 
-`localhost:80/work`
+`localhost:80/front_page`
