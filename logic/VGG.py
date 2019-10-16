@@ -14,13 +14,15 @@ def fit():
     #画像の大きさを設定
     img_width, img_height = 150, 150
 
-    train_img_path = './images/train/'
-    test_img_path = './images/test/'
+    train_img_path = '../images/train/'
+    test_img_path = '../images/test/'
+    result_path = '../result'
 
-    batch_size = 32
+    batch_size = 100
 
     input_tensor = Input(shape=(img_width,img_height,3))
     model = VGG16(include_top=False, weights='imagenet',input_tensor=input_tensor,input_shape=None)
+    model.summary()
 
     #VGG16の全結合層の部分を再定義
     top_model = Sequential()
@@ -29,15 +31,20 @@ def fit():
     top_model.add(Dropout(0.5))
     top_model.add(Dense(1,activation='sigmoid'))
 
-    full_model = Model(input=model.input, output=top_model(vgg16.output))
+    full_model = Model(input=model.input, output=top_model(model.output))
 
     #15層目までの重みを凍結。(構成については調べてください。))
-    for layer in full_model.layer[:15]:
+    for layer in full_model.layers[:15]:
         layer.trainable = False
+
+    full_model.compile(loss='binary_crossentropy',
+          optimizer=optimizers.SGD(lr=1e-3, momentum=0.9),
+          metrics=['accuracy'])
 
     #画像の量まし
     train_datagen = ImageDataGenerator(rescale=1.0 / 255,zoom_range=0.2,horizontal_flip=True)
     validation_datagen = ImageDataGenerator(rescale=1.0 / 255,zoom_range=0.2,horizontal_flip=True)
+
 
     train_generator = train_datagen.flow_from_directory(
         train_img_path,
@@ -45,7 +52,9 @@ def fit():
         color_mode='rgb',
         class_mode='binary',
         batch_size=batch_size,
-        shuffle=True)
+        shuffle=False)
+    
+    print(train_generator.class_indices)
 
     validation_generator = validation_datagen.flow_from_directory(
         test_img_path,
@@ -53,14 +62,21 @@ def fit():
         color_mode='rgb',
         class_mode='binary',
         batch_size=batch_size,
-        shuffle=True)
+        shuffle=False)
     
-    history = model.fit_generator(
+    print(validation_generator.class_indices)
+    
+    
+    history = full_model.fit_generator(
         train_generator,
-        samples_per_epoch=2000,
-        nb_epoch=nb_epoch,
+        samples_per_epoch=1000,
+        nb_epoch=10,
         validation_data=validation_generator,
-        nb_val_samples=800)
+        nb_val_samples=50)
+    
+    vgg_model.save_weights(os.path.join(result_path,'Fintuning.h5'))
+
+
 
 
 
@@ -73,6 +89,7 @@ def flickr_api(img_name):
     #保存フォルダの指定
     savedir = "../images"
     
+    #画像の数
     number_img = 200
 
     flickr = FlickrAPI(key, secret, format='parsed-json') #Flickrにアクセス
@@ -89,27 +106,29 @@ def flickr_api(img_name):
 
     for i , photo in enumerate(photos['photo']): #enumerateは、添字と値を返す。つまりここでは、iに番号。photoに値がくる。
         url_q = photo['url_q'] #持ってきた写真のurl
-        filepath = savedir + '/train/' + img_name
+        
+        #dir作成
+        filepath = savedir + '/train/' + 'target'
         if os.path.exists(filepath) == False:
             os.makedirs(filepath)
-        filepath = savedir + '/test/' + img_name
+        filepath = savedir + '/test/' + 'target'
         if os.path.exists(filepath) == False:
             os.makedirs(filepath)
 
         
-        
-        if i<=int(number_img*0.9):
-            filepath = savedir + '/train/' + img_name + '/' + photo['id'] + '.jpg'
+        #学習用画像
+        if i<int(number_img*0.9):
+            filepath = savedir + '/train/' + 'target' + '/' + photo['id'] + '.jpg'
             if os.path.exists(filepath): continue #重複確認
             urlretrieve(url_q,filepath) #url_qのURLの先を、filepathに保存
             
-            
+        #検証用画像  
         else:
-            filepath = savedir + '/test/' + img_name + '/' + photo['id'] + '.jpg' 
+            filepath = savedir + '/test/' + 'target' + '/' + photo['id'] + '.jpg' 
             if os.path.exists(filepath): continue #重複確認
             urlretrieve(url_q,filepath)
             
 
-
+#検証用コマンド
 if __name__ =="__main__":
-    flickr_api('Dog')
+    fit()
