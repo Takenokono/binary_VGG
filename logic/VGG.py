@@ -22,7 +22,6 @@ def fit():
 
     input_tensor = Input(shape=(img_width,img_height,3))
     model = VGG16(include_top=False, weights='imagenet',input_tensor=input_tensor,input_shape=None)
-    model.summary()
 
     #VGG16の全結合層の部分を再定義
     top_model = Sequential()
@@ -45,7 +44,7 @@ def fit():
     train_datagen = ImageDataGenerator(rescale=1.0 / 255,zoom_range=0.2,horizontal_flip=True)
     validation_datagen = ImageDataGenerator(rescale=1.0 / 255,zoom_range=0.2,horizontal_flip=True)
 
-
+    #学習用画像生成器
     train_generator = train_datagen.flow_from_directory(
         train_img_path,
         target_size=(img_width, img_height),
@@ -53,9 +52,9 @@ def fit():
         class_mode='binary',
         batch_size=batch_size,
         shuffle=False)
-    
     print(train_generator.class_indices)
 
+    #検証用画像生成器
     validation_generator = validation_datagen.flow_from_directory(
         test_img_path,
         target_size=(img_width, img_height),
@@ -63,7 +62,6 @@ def fit():
         class_mode='binary',
         batch_size=batch_size,
         shuffle=False)
-    
     print(validation_generator.class_indices)
     
     
@@ -74,7 +72,7 @@ def fit():
         validation_data=validation_generator,
         nb_val_samples=50)
     
-    vgg_model.save_weights(os.path.join(result_path,'Fintuning.h5'))
+    full_model.save_weights(os.path.join(result_path,'Fintuning.h5'))
 
 
 
