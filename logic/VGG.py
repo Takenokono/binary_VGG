@@ -4,6 +4,7 @@ from keras.preprocessing.image import ImageDataGenerator
 from keras.models import Sequential, Model
 from keras.layers import Input, Activation, Dropout, Flatten, Dense
 from keras.preprocessing.image import ImageDataGenerator
+from keras.preprocessing import image
 from keras import optimizers
 from flickrapi import FlickrAPI
 from urllib.request import urlretrieve
@@ -14,9 +15,9 @@ def fit():
     #画像の大きさを設定
     img_width, img_height = 150, 150
 
-    train_img_path = '../images/train/'
-    test_img_path = '../images/test/'
-    result_path = '../result'
+    train_img_path = './images/train/'
+    test_img_path = './images/test/'
+    result_path = './result'
 
     batch_size = 100
 
@@ -68,7 +69,7 @@ def fit():
     history = full_model.fit_generator(
         train_generator,
         samples_per_epoch=1000,
-        nb_epoch=10,
+        nb_epoch=5,
         validation_data=validation_generator,
         nb_val_samples=50)
     
@@ -76,6 +77,52 @@ def fit():
 
 
 
+##TODO:推論関数の追加
+def predict():
+    #画像の大きさを設定
+    img_width, img_height = 150, 150
+
+    test_img_path = './images/last_check'
+    result_path = './result'
+
+    input_tensor = Input(shape=(img_width,img_height,3))
+    model = VGG16(include_top=False, weights='imagenet',input_tensor=input_tensor,input_shape=None)
+
+    #VGG16の全結合層の部分を再定義
+    top_model = Sequential()
+    top_model.add(Flatten(input_shape=model.output_shape[1:]))
+    top_model.add(Dense(256,activation='relu'))
+    top_model.add(Dropout(0.5))
+    top_model.add(Dense(1,activation='sigmoid'))
+
+    full_model = Model(input=model.input, output=top_model(model.output))
+
+    # 学習済みの重みをロード
+    full_model.load_weights(os.path.join(result_path, 'Fintuning.h5'))
+
+    full_model.compile(loss='binary_crossentropy',
+          optimizer=optimizers.SGD(lr=1e-3, momentum=0.9),
+          metrics=['accuracy'])
+    
+    # テスト用画像を取得して変数に入れる
+    test_imagelist = os.listdir(test_img_path)
+    test_imagelist.sort()
+
+    # それぞれの画像について推論する
+    for test_image in test_imagelist:
+        if test_image == '.DS_Store':
+            continue
+        filename = os.path.join(test_img_path, test_image)
+        img = image.load_img(filename, target_size=(img_width, img_height))
+        x = image.img_to_array(img)
+        x = np.expand_dims(x, axis=0)
+        # 学習時の正規化に合わせて、推論時も正規化
+        x = x / 255.0
+        # 推論を行う
+        # キャラクターごとに確率を出力
+        pred = full_model.predict(x)[0]
+        
+        return pred
 
 
 def flickr_api(img_name):
@@ -85,7 +132,7 @@ def flickr_api(img_name):
     wait_time = 1
  
     #保存フォルダの指定
-    savedir = "../images"
+    savedir = "./images"
     
     #画像の数
     number_img = 200
@@ -129,4 +176,4 @@ def flickr_api(img_name):
 
 #検証用コマンド
 if __name__ =="__main__":
-    fit()
+    predict()
