@@ -8,3 +8,6 @@
 
 ## Front Page 
 `localhost:80/front_page`
+
+## Other thing.......
+ Please ask me directly...
