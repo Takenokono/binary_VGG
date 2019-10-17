@@ -1,4 +1,4 @@
-# Flickr_API及びVGG16を用いた２クラス分類器
+# Binary Classifier Service using VGG16 and Flask_API
 ## Before run application...
  You need to install some modules from ` requirements.txt`. So, please run `pip install -r requirements.txt`.
  And we will use Flickr API. Set up thouse setting before run.
