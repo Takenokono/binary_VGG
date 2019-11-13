@@ -82,14 +82,15 @@ def fit():
 
 ##TODO:ミッケ画像を切り抜いて閾値(0.85)を超えたものを枠取りする機能の追加
 ##学習した重みデータを読み込んで推論を行う
+##パスを検証用に改良している状態
 def predict():
     #画像の大きさを設定
     img_width, img_height = 150, 150
 
     #tmpからミッケ画像を持ってくる。
     '''test_img_path = './images/last_check' '''
-    test_img_path = './tmp/mikke8.jpg' #ミッケ画像の読み込み
-    result_path = './result'
+    test_img_path = '../tmp/mikke8.jpg' #ミッケ画像の読み込み
+    result_path = '../result'
 
     input_tensor = Input(shape=(img_width,img_height,3))
     model = VGG16(include_top=False, weights='imagenet',input_tensor=input_tensor,input_shape=None)
@@ -113,7 +114,7 @@ def predict():
     ##TODO:ここにミッケ画像を分割して処理させる機能を追加する(?)
     mikke = cv2.imread(test_img_path)
     height , width = mikke.shape[:2]  #ミッケの全体画像の縦幅・横幅を取得
-    width = width - 660 #下記の説明文の領域を削除
+    height = height - 660 #下記の説明文の領域を削除
 
     for i in [10,9,8,7,6,5,4]:
         now_h = 0
@@ -122,28 +123,42 @@ def predict():
         before_w = 0
         tmp_h = int(height / i)
         tmp_w = int(width / i)
+        p = 0 #デバック変数
         for j in range(i):
             now_h = now_h + tmp_h
+            before_w = 0
+            now_w = 0
             for k in range(i):
                 now_w = now_w + tmp_w
-                target_img = mikke[before_h:now_h, before_w:now_w]
+                
+                #デバック用コード
+                print()
+                print('='*50)
+                p += 1
+                print('p = ' + str(p),'now_h = ' + str(now_h) , 'now_w = ' + str(now_w), 'before_h = ' + str(before_h), 'before_w = ' + str(before_w))
+                print()
+                print('='*50)
+                print()
+                ####
+
+                target_img = mikke[before_h : now_h, before_w : now_w]
                 
                 #tmpファイルの作成
-                tmp_path = './tmp/tmp.jpg'
+                tmp_path = '../tmp/tmp.jpg'
                 cv2.imwrite(tmp_path,target_img)
                 
                 #tmpファイルの推論
-                img = image.load_img(filename, target_size=(img_width, img_height))
+                img = image.load_img(tmp_path,target_size=(img_width, img_height))
                 x = image.img_to_array(img)
                 x = np.expand_dims(x, axis=0)   ##学習時の正規化に合わせて、推論時も正規化
                 x = x / 255.0
                 pred = full_model.predict(x)[0]
-                if pred[0]>0.85:
-                    mikke = cv2.rectangle(mikke,(before_h,before_w),(now_h,now_w),(255,0,0),3)
+                if pred[0]>0.7:
+                    cv2.rectangle(mikke,(before_w,before_h),(now_w,now_h),(0,0,255),40)
                 before_w = now_w
             before_h = before_h + tmp_h
     
-    a_img_path = './tmp/predict.jpg'
+    a_img_path = '../tmp/predict.jpg'
     cv2.imwrite(a_img_path,mikke)
     
 
@@ -173,8 +188,8 @@ def predict():
 ##flickrから学習画像を学習用・検証用に分けてimageディレクトリに保存
 def flickr_api(img_name):
     #APIキーの情報
-    key = "9bda2e46c5427ab8142328717894c178"
-    secret = "de0dabbbc19eb7bb"
+    key = ""
+    secret = ""
     wait_time = 1
  
     #保存フォルダの指定
