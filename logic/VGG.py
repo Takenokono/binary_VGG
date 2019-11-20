@@ -18,9 +18,9 @@ def fit():
     #画像の大きさを設定
     img_width, img_height = 150, 150
 
-    train_img_path = './images/train/'
-    test_img_path = './images/test/'
-    result_path = './result'
+    train_img_path = '../images/train/'
+    test_img_path = '../images/test/'
+    result_path = '../result'
 
     batch_size = 100
 
@@ -72,7 +72,7 @@ def fit():
     history = full_model.fit_generator(
         train_generator,
         samples_per_epoch=1000,
-        nb_epoch=5,
+        nb_epoch=15,
         validation_data=validation_generator,
         nb_val_samples=50)
     
@@ -89,8 +89,8 @@ def predict():
 
     #tmpからミッケ画像を持ってくる。
     '''test_img_path = './images/last_check' '''
-    test_img_path = '../tmp/mikke8.jpg' #ミッケ画像の読み込み
-    result_path = '../result'
+    test_img_path = './tmp/mikke8.jpg' #ミッケ画像の読み込み
+    result_path = './result'
 
     input_tensor = Input(shape=(img_width,img_height,3))
     model = VGG16(include_top=False, weights='imagenet',input_tensor=input_tensor,input_shape=None)
@@ -116,14 +116,61 @@ def predict():
     height , width = mikke.shape[:2]  #ミッケの全体画像の縦幅・横幅を取得
     height = height - 660 #下記の説明文の領域を削除
 
-    for i in [10,9,8,7,6,5,4]:
-        now_h = 0
-        before_h = 0
-        now_w = 0
-        before_w = 0
+    for i in [12,11,10,9,7,5]:
+        front_h = 0
+        back_h = 0
+        front_w = 0
+        back_w = 0
         tmp_h = int(height / i)
         tmp_w = int(width / i)
         p = 0 #デバック変数
+        
+        front_h = tmp_h
+        front_w = tmp_w
+
+        while(1):
+            if front_h > height:
+                break
+
+            front_w = tmp_w
+            back_w = 0
+            
+            while(1):
+                if front_w > width:
+                    break
+                print()
+                print('='*50)
+                print('Size = ' + str(i),'front_h = ' + str(front_h) , 'front_w = ' + str(front_w), 'back_h = ' + str(back_h), 'back_w = ' + str(back_w))
+                print()
+                print('='*50)
+                print()
+
+                #targetの領域
+                target_img = mikke[back_h : front_h, back_w : front_w]
+                
+                #tmpファイルの作成
+                tmp_path = './tmp/tmp.jpg'
+                cv2.imwrite(tmp_path,target_img)
+                
+                #tmpファイルの推論
+                img = image.load_img(tmp_path,target_size=(img_width, img_height))
+                x = image.img_to_array(img)
+                x = np.expand_dims(x, axis=0)   ##学習時の正規化に合わせて、推論時も正規化
+                x = x / 255.0
+                pred = full_model.predict(x)[0]
+                if pred[0]>0.95:
+                    cv2.rectangle(mikke,(back_w,back_h),(front_w,front_h),(0,0,255),5)
+                
+                front_w += 100
+                back_w += 100
+                
+            front_h += 200
+            back_h += 200
+
+
+                
+        
+        """
         for j in range(i):
             now_h = now_h + tmp_h
             before_w = 0
@@ -144,7 +191,7 @@ def predict():
                 target_img = mikke[before_h : now_h, before_w : now_w]
                 
                 #tmpファイルの作成
-                tmp_path = '../tmp/tmp.jpg'
+                tmp_path = './tmp/tmp.jpg'
                 cv2.imwrite(tmp_path,target_img)
                 
                 #tmpファイルの推論
@@ -157,8 +204,8 @@ def predict():
                     cv2.rectangle(mikke,(before_w,before_h),(now_w,now_h),(0,0,255),40)
                 before_w = now_w
             before_h = before_h + tmp_h
-    
-    a_img_path = '../tmp/predict.jpg'
+        """
+    a_img_path = './tmp/predict.jpg'
     cv2.imwrite(a_img_path,mikke)
     
 
@@ -193,7 +240,7 @@ def flickr_api(img_name):
     wait_time = 1
  
     #保存フォルダの指定
-    savedir = "./images"
+    savedir = "../images"
     
     #画像の数
     number_img = 200
@@ -237,4 +284,5 @@ def flickr_api(img_name):
 
 #検証用コマンド
 if __name__ =="__main__":
-    predict()
+    flickr_api('Scallop shell')
+    fit()
