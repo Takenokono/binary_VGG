@@ -3,6 +3,6 @@ Flask==1.1.1
 tensorflow==1.13.1
 numpy==1.16.4
 urllib3==1.24.3
-opencv-python==4.1.1.26
+opencv-python==4.2.0.32
 flickrapi==2.4.0
 Pillow==6.2.1
